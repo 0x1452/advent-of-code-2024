@@ -41,10 +41,10 @@ bool IsReportSafeInOrder(List<int> report, bool isAscending, int errorCount, int
     logger.Verbose($"Called IsReportSafe: [{string.Join(", ", report)}], isAscending: {isAscending}, errorCount: {errorCount}");
     for (int i = 0; i < report.Count - 1; i++)
     {
-        var isMonotonic = IsMonotonic(isAscending, report[i], report[i + 1]);
+        var isInSafeOrder = InInSafeOrder(isAscending, report[i], report[i + 1]);
         var isInSafeDistance = IsInSafeDistance(report[i], report[i + 1]);
 
-        if (!isMonotonic || !isInSafeDistance)
+        if (!isInSafeOrder || !isInSafeDistance)
         {
             errorCount++;
 
@@ -73,10 +73,10 @@ bool IsReportPerfectlySafe(List<int> report)
     var isAscending = report[0] < report[1];
     for (int i = 0; i < report.Count - 1; i++)
     {
-        var isMonotonic = IsMonotonic(isAscending, report[i], report[i + 1]);
+        var isInSafeOrder = InInSafeOrder(isAscending, report[i], report[i + 1]);
         var isInSafeDistance = IsInSafeDistance(report[i], report[i + 1]);
 
-        if (!isMonotonic || !isInSafeDistance)
+        if (!isInSafeOrder || !isInSafeDistance)
             return false;
     }
 
@@ -98,7 +98,7 @@ bool IsReportSafeBruteforce(List<int> report)
 List<int> WithoutIndex(List<int> list, int index)
     => list.Take(index).Concat(list.Skip(index + 1)).ToList();
 
-bool IsMonotonic(bool isAscending, int first, int second)
+bool InInSafeOrder(bool isAscending, int first, int second)
     => isAscending
         ? first < second
         : first > second;
