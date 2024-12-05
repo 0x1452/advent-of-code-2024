@@ -95,7 +95,7 @@ static int CountOccurrences(IEnumerable<char> chars, string keyword)
         if (queue.Count > keyword.Length)
             queue.Dequeue();
 
-        if (queue.Count == keyword.Length && Matches(queue, keyword))
+        if (queue.Count == keyword.Length && queue.SequenceEqual(keyword))
             count++;
 
         index++;
@@ -103,22 +103,6 @@ static int CountOccurrences(IEnumerable<char> chars, string keyword)
 
     return count;
 }
-
-static bool Matches(Queue<char> queue, string keyword)
-{
-    var i = 0;
-
-    foreach (var c in queue)
-    {
-        if (c != keyword[i])
-            return false;
-
-        i++;
-    }
-
-    return true;
-}
-
 
 SolvePart1("Input/example.txt");
 SolvePart1("Input/input.txt");
