@@ -19,14 +19,12 @@ void SolvePart1(string path)
     .SelectMany(x => x);
 
     var keyword = "XMAS";
-    var keywordReversed = string.Join("", keyword.Reverse());
 
     var sum = 0;
     foreach (var sequence in sequences)
     {
         logger.Verbose(string.Join(" ", sequence));
         sum += CountOccurrences(sequence, keyword);
-        sum += CountOccurrences(sequence, keywordReversed);
     }
 
     logger.Information($"[Part1:{path}] {sum}");
@@ -49,37 +47,22 @@ void SolvePart2(string path)
         {
             if (grid[y, x] == 'A')
             {
-                var subgrid = GridUtils.GetSubgrid(
-                    grid, 
-                    startY: y - 1, 
-                    startX: x - 1, 
-                    width: 3, 
-                    height: 3);
+                var diagonals = new[]
+                {
+                    new[] { grid[y - 1, x - 1], grid[y, x], grid[y + 1, x + 1] },
+                    new[] { grid[y - 1, x + 1], grid[y, x], grid[y + 1, x - 1] }
+                };
 
-                var xOccurrences = CountXOccurences(subgrid, keyword);
-                logger.Debug(GridUtils.GridString(subgrid));
-                if (xOccurrences == 2)
+                var isXmas = diagonals
+                    .All(diagonal => diagonal.SequenceEqual(keyword) || diagonal.SequenceEqual(keyword.Reverse()));
+
+                if (isXmas)
                     sum++;
             }
         }
     }
 
     logger.Information($"[Part2:{path}] {sum}");
-}
-
-int CountXOccurences(char[,] grid, string keyword)
-{
-    var keywordReversed = string.Join("", keyword.Reverse());
-
-    var sum = 0;
-    foreach (var sequence in GridUtils.EnumerateDiagonals(grid))
-    {
-        logger.Verbose(string.Join(" ", sequence));
-        sum += CountOccurrences(sequence, keyword);
-        sum += CountOccurrences(sequence, keywordReversed);
-    }
-
-    return sum;
 }
 
 static int CountOccurrences(IEnumerable<char> chars, string keyword)
@@ -95,7 +78,7 @@ static int CountOccurrences(IEnumerable<char> chars, string keyword)
         if (queue.Count > keyword.Length)
             queue.Dequeue();
 
-        if (queue.Count == keyword.Length && queue.SequenceEqual(keyword))
+        if (queue.Count == keyword.Length && (queue.SequenceEqual(keyword) || queue.SequenceEqual(keyword.Reverse())))
             count++;
 
         index++;
