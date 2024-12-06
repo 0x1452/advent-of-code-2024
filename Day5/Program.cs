@@ -61,8 +61,8 @@ void SolvePart2(string filename)
 
                 rules.TryGetValue(current, out var numbersBefore);
 
-                var currentIsHigher = numbersBefore?.Contains(next) ?? true;
-
+                var currentIsHigher = numbersBefore?.Contains(next) ?? false;
+                
                 return currentIsHigher ? 1 : -1;
             });
 
