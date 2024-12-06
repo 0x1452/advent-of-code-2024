@@ -98,18 +98,18 @@ bool IsEndlessLoop(Player player, char[,] grid, Direction[,] gridMask)
 {
     while (true)
     {
-        var nextStep = GetNextStep(player);
-        if (IsOutOfBounds(grid, nextStep.X, nextStep.Y))
+        var (nextX, nextY) = GetNextStep(player);
+        if (IsOutOfBounds(grid, nextX, nextY))
             return false;
 
-        if (IsObstacle(grid, nextStep.X, nextStep.Y))
+        if (IsObstacle(grid, nextX, nextY))
         {
             player.Direction = GetNextDirection(player);
             continue;
         }
 
-        player.X = nextStep.X;
-        player.Y = nextStep.Y;
+        player.X = nextX;
+        player.Y = nextY;
 
         if (gridMask[player.Y, player.X] == player.Direction)
             return true;
@@ -136,21 +136,21 @@ void TraverseGrid(Player player, char[,] grid, bool[,] gridMask)
     var leftGrid = false;
     while (!leftGrid)
     {
-        var nextStep = GetNextStep(player);
-        if (IsOutOfBounds(grid, nextStep.X, nextStep.Y))
+        var (nextX, nextY) = GetNextStep(player);
+        if (IsOutOfBounds(grid, nextX, nextY))
         {
             leftGrid = true;
             break;
         }
 
-        if (IsObstacle(grid, nextStep.X, nextStep.Y))
+        if (IsObstacle(grid, nextX, nextY))
         {
             player.Direction = GetNextDirection(player);
             continue;
         }
 
-        player.X = nextStep.X;
-        player.Y = nextStep.Y;
+        player.X = nextX;
+        player.Y = nextY;
         gridMask[player.Y, player.X] = true;
 
         if (logger.IsEnabled(LogEventLevel.Debug))
