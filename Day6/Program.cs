@@ -32,10 +32,11 @@ void SolvePart1(string path)
 
     var player = new Player
     {
-        Coordinates = new Coordinates(playerX, playerY),
+        X = playerX,
+        Y = playerY,
         Direction = direction
     };
-    gridMask[player.Coordinates.Y, player.Coordinates.X] = true;
+    gridMask[player.Y, player.X] = true;
 
     TraverseGrid(player, grid, gridMask);
 
@@ -62,7 +63,6 @@ void SolvePart2(string path)
         _ => throw new NotImplementedException(),
     };
 
-
     var loopCount = 0;
     for (int y = 0; y < rows; y++)
     {
@@ -70,15 +70,16 @@ void SolvePart2(string path)
         {
             var player = new Player
             {
-                Coordinates = new Coordinates(playerX, playerY),
+                X = playerX,
+                Y = playerY,
                 Direction = direction
             };
             var gridMask = new Direction[rows, cols];
-            gridMask[player.Coordinates.Y, player.Coordinates.X] = direction;
+            gridMask[player.Y, player.X] = direction;
 
             var originalTile = grid[y, x];
 
-            if (originalTile == '#' || player.Coordinates == new Coordinates(x, y))
+            if (originalTile == '#' || (player.X, player.Y) == (x, y))
                 continue;
 
             grid[y, x] = '#';
@@ -98,21 +99,22 @@ bool IsEndlessLoop(Player player, char[,] grid, Direction[,] gridMask)
     while (true)
     {
         var nextStep = GetNextStep(player);
-        if (IsOutOfBounds(grid, nextStep))
+        if (IsOutOfBounds(grid, nextStep.X, nextStep.Y))
             return false;
 
-        if (IsObstacle(grid, nextStep))
+        if (IsObstacle(grid, nextStep.X, nextStep.Y))
         {
             player.Direction = GetNextDirection(player);
             continue;
         }
 
-        player.Coordinates = nextStep;
+        player.X = nextStep.X;
+        player.Y = nextStep.Y;
 
-        if (gridMask[player.Coordinates.Y, player.Coordinates.X] == player.Direction)
+        if (gridMask[player.Y, player.X] == player.Direction)
             return true;
 
-        gridMask[player.Coordinates.Y, player.Coordinates.X] = player.Direction;
+        gridMask[player.Y, player.X] = player.Direction;
 
         if (logger.IsEnabled(LogEventLevel.Debug))
         {
@@ -135,45 +137,44 @@ void TraverseGrid(Player player, char[,] grid, bool[,] gridMask)
     while (!leftGrid)
     {
         var nextStep = GetNextStep(player);
-        if (IsOutOfBounds(grid, nextStep))
+        if (IsOutOfBounds(grid, nextStep.X, nextStep.Y))
         {
             leftGrid = true;
             break;
         }
 
-        if (IsObstacle(grid, nextStep))
+        if (IsObstacle(grid, nextStep.X, nextStep.Y))
         {
             player.Direction = GetNextDirection(player);
             continue;
         }
 
-        player.Coordinates = nextStep;
-        gridMask[player.Coordinates.Y, player.Coordinates.X] = true;
+        player.X = nextStep.X;
+        player.Y = nextStep.Y;
+        gridMask[player.Y, player.X] = true;
 
         if (logger.IsEnabled(LogEventLevel.Debug))
             logger.Debug("{Grid}", GridUtils.GridString(gridMask, b => b ? "1" : "0") + "\n");
     }
 }
 
-Coordinates GetNextStep(Player player)
+(int X, int Y) GetNextStep(Player player)
 {
     var nextX = player.Direction switch
     {
-        Direction.Up or Direction.Down => player.Coordinates.X,
-        Direction.Right => player.Coordinates.X + 1,
-        Direction.Left => player.Coordinates.X - 1,
-        _ => throw new NotImplementedException(),
+        Direction.Right => player.X + 1,
+        Direction.Left => player.X - 1,
+        _ => player.X
     };
 
     var nextY = player.Direction switch
     {
-        Direction.Left or Direction.Right => player.Coordinates.Y,
-        Direction.Up => player.Coordinates.Y - 1,
-        Direction.Down => player.Coordinates.Y + 1,
-        _ => throw new NotImplementedException(),
+        Direction.Up => player.Y - 1,
+        Direction.Down => player.Y + 1,
+        _ => player.Y
     };
 
-    return new Coordinates(nextX, nextY);
+    return (nextX, nextY);
 }
 
 Direction GetNextDirection(Player player)
@@ -186,19 +187,19 @@ Direction GetNextDirection(Player player)
         _ => throw new NotImplementedException()
     };
 
-bool IsOutOfBounds(char[,] grid, Coordinates coordinates)
+bool IsOutOfBounds(char[,] grid, int x, int y)
 {
     int rows = grid.GetLength(0);
     int cols = grid.GetLength(1);
 
-    return coordinates.X >= rows
-        || coordinates.X < 0
-        || coordinates.Y >= cols
-        || coordinates.Y < 0;
+    return x >= rows
+        || x < 0
+        || y >= cols
+        || y < 0;
 }
 
-bool IsObstacle(char[,] grid, Coordinates coordinates)
-    => grid[coordinates.Y, coordinates.X] == '#';
+bool IsObstacle(char[,] grid, int x, int y)
+    => grid[y, x] == '#';
 
 (int x, int y) GetPlayerCoordinates(char[,] grid)
 {    
@@ -233,9 +234,9 @@ enum Direction
     Right
 }
 
-record Coordinates(int X, int Y);
 class Player
 {
-    public Coordinates Coordinates { get; set; } = new(0, 0);
+    public int X { get; set; }
+    public int Y { get; set; }
     public Direction Direction { get; set; }
 }
