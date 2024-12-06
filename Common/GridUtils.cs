@@ -23,7 +23,7 @@ public class GridUtils
         return grid;
     }
 
-    public static string GridString<T>(T[,] grid)
+    public static string GridString<T>(T[,] grid, Func<T, string> toString)
     {
         var sb = new StringBuilder();
 
@@ -34,7 +34,7 @@ public class GridUtils
         {
             for (int c = 0; c < cols; c++)
             {
-                sb.Append(grid[r, c]);
+                sb.Append(toString(grid[r, c]));
             }
             sb.Append("\n");
         }
