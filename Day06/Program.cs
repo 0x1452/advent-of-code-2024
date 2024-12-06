@@ -53,8 +53,8 @@ void SolvePart2(string path)
     var rows = grid.GetLength(0);
     var cols = grid.GetLength(1);
 
-    var (playerX, playerY) = GetPlayerCoordinates(grid);
-    var direction = grid[playerY, playerX] switch
+    var (startX, startY) = GetPlayerCoordinates(grid);
+    var startDirection = grid[startY, startX] switch
     {
         '^' => Direction.Up,
         'v' => Direction.Down,
@@ -63,19 +63,30 @@ void SolvePart2(string path)
         _ => throw new NotImplementedException(),
     };
 
+    var player = new Player
+    {
+        X = startX,
+        Y = startY,
+        Direction = startDirection
+    };
+    var traverseMask = new bool[rows, cols];
+    TraverseGrid(player, grid, traverseMask);
+
     var loopCount = 0;
     for (int y = 0; y < rows; y++)
     {
         for (int x = 0; x < cols; x++)
         {
-            var player = new Player
-            {
-                X = playerX,
-                Y = playerY,
-                Direction = direction
-            };
+            var isInPlayerPath = traverseMask[y, x];
+            if (!isInPlayerPath)
+                continue;
+
+            player.X = startX;
+            player.Y = startY;
+            player.Direction = startDirection;
+
             var gridMask = new Direction[rows, cols];
-            gridMask[player.Y, player.X] = direction;
+            gridMask[player.Y, player.X] = startDirection;
 
             var originalTile = grid[y, x];
 
@@ -202,7 +213,7 @@ bool IsObstacle(char[,] grid, int x, int y)
     => grid[y, x] == '#';
 
 (int x, int y) GetPlayerCoordinates(char[,] grid)
-{    
+{
     var rows = grid.GetLength(0);
     var cols = grid.GetLength(1);
 
