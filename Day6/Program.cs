@@ -6,6 +6,8 @@ ILogger logger = new LoggerSetup().Logger;
 
 SolvePart1("Input/example.txt");
 SolvePart1("Input/input.txt");
+SolvePart2("Input/example.txt");
+SolvePart2("Input/input.txt");
 
 void SolvePart1(string path)
 {
@@ -39,6 +41,92 @@ void SolvePart1(string path)
 
     var visitedCount = gridMask.Cast<bool>().Count(tileVisited => tileVisited);
     logger.Information("[Part1:{Path}] {VisitedCount}", path, visitedCount);
+}
+
+void SolvePart2(string path)
+{
+    var content = File.ReadAllText(path);
+
+    var grid = GridUtils.ParseGrid(content, c => c);
+
+    var rows = grid.GetLength(0);
+    var cols = grid.GetLength(1);
+
+    var (playerX, playerY) = GetPlayerCoordinates(grid);
+    var direction = grid[playerY, playerX] switch
+    {
+        '^' => Direction.Up,
+        'v' => Direction.Down,
+        '>' => Direction.Right,
+        '<' => Direction.Left,
+        _ => throw new NotImplementedException(),
+    };
+
+
+    var loopCount = 0;
+    for (int y = 0; y < rows; y++)
+    {
+        for (int x = 0; x < cols; x++)
+        {
+            var player = new Player
+            {
+                Coordinates = new Coordinates(playerX, playerY),
+                Direction = direction
+            };
+            var gridMask = new Direction[rows, cols];
+            gridMask[player.Coordinates.Y, player.Coordinates.X] = direction;
+
+            var originalTile = grid[y, x];
+
+            if (originalTile == '#' || player.Coordinates == new Coordinates(x, y))
+                continue;
+
+            grid[y, x] = '#';
+
+            if (IsEndlessLoop(player, grid, gridMask))
+                loopCount++;
+
+            grid[y, x] = originalTile;
+        }
+    }
+
+    logger.Information("[Part2:{Path}] {LoopCount}", path, loopCount);
+}
+
+bool IsEndlessLoop(Player player, char[,] grid, Direction[,] gridMask)
+{
+    while (true)
+    {
+        var nextStep = GetNextStep(player);
+        if (IsOutOfBounds(grid, nextStep))
+            return false;
+
+        if (IsObstacle(grid, nextStep))
+        {
+            player.Direction = GetNextDirection(player);
+            continue;
+        }
+
+        player.Coordinates = nextStep;
+
+        if (gridMask[player.Coordinates.Y, player.Coordinates.X] == player.Direction)
+            return true;
+
+        gridMask[player.Coordinates.Y, player.Coordinates.X] = player.Direction;
+
+        if (logger.IsEnabled(LogEventLevel.Debug))
+        {
+            logger.Debug("{Grid}", GridUtils.GridString(gridMask, d => d switch
+            {
+                Direction.None => ".",
+                Direction.Up => "^",
+                Direction.Down => "v",
+                Direction.Left => "<",
+                Direction.Right => ">",
+                _ => "?"
+            }));
+        }
+    }
 }
 
 void TraverseGrid(Player player, char[,] grid, bool[,] gridMask)
@@ -138,6 +226,7 @@ bool IsObstacle(char[,] grid, Coordinates coordinates)
 
 enum Direction
 {
+    None,
     Up,
     Down,
     Left,
