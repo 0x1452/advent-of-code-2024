@@ -67,27 +67,26 @@ bool IsPossible(IncompleteEquation equation, int index = 0, bool enableConcatena
     if (equation.Values[index] > equation.Result)
         return false;
 
-    var originalNextValue = equation.Values[index + 1];
+    var currentValue = equation.Values[index];
+    var nextValue = equation.Values[index + 1];
 
-    equation.Values[index + 1] = equation.Values[index] * equation.Values[index + 1];
+    equation.Values[index + 1] = currentValue * nextValue;
     if (IsPossible(equation, index + 1, enableConcatenation))
         return true;
-    equation.Values[index + 1] = originalNextValue;
 
-    equation.Values[index + 1] = equation.Values[index] + equation.Values[index + 1];
+    equation.Values[index + 1] = currentValue + nextValue;
     if (IsPossible(equation, index + 1, enableConcatenation))
         return true;
-    equation.Values[index + 1] = originalNextValue;
 
     if (enableConcatenation)
     {
-        var concatenated = Concatenate(equation.Values[index], equation.Values[index + 1]);
+        var concatenated = Concatenate(currentValue, nextValue);
         equation.Values[index + 1] = concatenated;
         if (IsPossible(equation, index + 1, enableConcatenation))
             return true;
-        equation.Values[index + 1] = originalNextValue;
     }
 
+    equation.Values[index + 1] = nextValue;
     return false;
 }
 
