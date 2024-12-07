@@ -92,8 +92,12 @@ bool IsPossible(IncompleteEquation equation, int index = 0, bool enableConcatena
 
 long Concatenate(long first, long second)
 {
-    var numberOfDigits = Math.Floor(Math.Log10(second) + 1);
-    return first * (long)Math.Pow(10, numberOfDigits) + second;
+    long multiplier = 1;
+
+    while (multiplier <= second)
+        multiplier *= 10;
+
+    return first * multiplier + second;
 }
 
 record IncompleteEquation(long Result, List<long> Values);
