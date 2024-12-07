@@ -8,48 +8,39 @@ SolvePart1("Input/input.txt");
 SolvePart2("Input/example.txt");
 SolvePart2("Input/input.txt");
 
-void SolvePart1(string filepath)
+List<IncompleteEquation> ParseInput(string filepath)
 {
     var content = File.ReadAllLines(filepath);
     var equations = new List<IncompleteEquation>();
-    long sum = 0;
+
     foreach (var line in content)
     {
         var parts = line.Split(": ", 2);
         var result = long.Parse(parts[0]);
         var values = parts[1].Split().Select(long.Parse).ToList();
 
-        var equation = new IncompleteEquation(result, values);
-        var isPossible = IsPossible(equation);
-
-        logger.Debug($"{isPossible}\t{line}");
-
-        if (isPossible)
-            sum += equation.Result;
+        equations.Add(new IncompleteEquation(result, values));
     }
+
+    return equations;
+}
+
+void SolvePart1(string filepath)
+{
+    var equations = ParseInput(filepath);
+    long sum = equations
+        .Where(e => IsPossible(e))
+        .Sum(e => e.Result);
 
     logger.Information("[Part1:{File}] {Result}", filepath, sum);
 }
 
 void SolvePart2(string filepath)
 {
-    var content = File.ReadAllLines(filepath);
-    var equations = new List<IncompleteEquation>();
-    long sum = 0;
-    foreach (var line in content)
-    {
-        var parts = line.Split(": ", 2);
-        var result = long.Parse(parts[0]);
-        var values = parts[1].Split().Select(long.Parse).ToList();
-
-        var equation = new IncompleteEquation(result, values);
-        var isPossible = IsPossible(equation, enableConcatenation: true);
-
-        logger.Debug($"{isPossible}\t{line}");
-
-        if (isPossible)
-            sum += equation.Result;
-    }
+    var equations = ParseInput(filepath);
+    long sum = equations
+        .Where(e => IsPossible(e, enableConcatenation: true))
+        .Sum(e => e.Result);
 
     logger.Information("[Part2:{File}] {Result}", filepath, sum);
 }
