@@ -52,33 +52,36 @@ void SolvePart2(string filepath)
     logger.Information("[Part2:{File}] {Result}  {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
 }
 
-bool IsPossible(IncompleteEquation equation, bool enableConcatenation = false)
+bool IsPossible(IncompleteEquation equation, int index = 0, bool enableConcatenation = false)
 {
     if (equation.Values.Count == 0)
         return false;
 
-    if (equation.Values.Count == 1)
-        return equation.Result == equation.Values[0];
+    if (index == equation.Values.Count - 1)
+        return equation.Result == equation.Values[index];
 
-    if (equation.Values[0] > equation.Result)
+    if (equation.Values[index] > equation.Result)
         return false;
 
-    var addition = equation.Values[0] + equation.Values[1];
-    var additionEquation = equation with { Values = [addition, .. equation.Values[2..]] };
-    if (IsPossible(additionEquation, enableConcatenation))
-        return true;
+    var originalNextValue = equation.Values[index + 1];
 
-    var multiplication = equation.Values[0] * equation.Values[1];
-    var multiplicationEquation = equation with { Values = [multiplication, .. equation.Values[2..]] };
-    if (IsPossible(multiplicationEquation, enableConcatenation))
+    equation.Values[index + 1] = equation.Values[index] * equation.Values[index + 1];
+    if (IsPossible(equation, index + 1, enableConcatenation))
         return true;
+    equation.Values[index + 1] = originalNextValue;
+
+    equation.Values[index + 1] = equation.Values[index] + equation.Values[index + 1];
+    if (IsPossible(equation, index + 1, enableConcatenation))
+        return true;
+    equation.Values[index + 1] = originalNextValue;
 
     if (enableConcatenation)
     {
-        var concatenation = long.Parse($"{equation.Values[0]}{equation.Values[1]}");
-        var concatenationEquation = equation with { Values = [concatenation, .. equation.Values[2..]] };
-        if (IsPossible(concatenationEquation, enableConcatenation))
+        var concatenated = long.Parse($"{equation.Values[index]}{equation.Values[index + 1]}");
+        equation.Values[index + 1] = concatenated;
+        if (IsPossible(equation, index + 1, enableConcatenation))
             return true;
+        equation.Values[index + 1] = originalNextValue;
     }
 
     return false;
