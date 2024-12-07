@@ -31,9 +31,11 @@ void SolvePart1(string filepath)
     var equations = ParseInput(filepath);
 
     var sw = Stopwatch.StartNew();
+
     long sum = equations
         .Where(e => IsPossible(e))
         .Sum(e => e.Result);
+
     sw.Stop();
 
     logger.Information("[Part1:{File}] {Result}  {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
@@ -44,9 +46,11 @@ void SolvePart2(string filepath)
     var equations = ParseInput(filepath);
 
     var sw = Stopwatch.StartNew();
+
     long sum = equations
         .Where(e => IsPossible(e, enableConcatenation: true))
         .Sum(e => e.Result);
+
     sw.Stop();
 
     logger.Information("[Part2:{File}] {Result}  {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
@@ -77,7 +81,7 @@ bool IsPossible(IncompleteEquation equation, int index = 0, bool enableConcatena
 
     if (enableConcatenation)
     {
-        var concatenated = long.Parse($"{equation.Values[index]}{equation.Values[index + 1]}");
+        var concatenated = Concatenate(equation.Values[index], equation.Values[index + 1]);
         equation.Values[index + 1] = concatenated;
         if (IsPossible(equation, index + 1, enableConcatenation))
             return true;
@@ -85,6 +89,12 @@ bool IsPossible(IncompleteEquation equation, int index = 0, bool enableConcatena
     }
 
     return false;
+}
+
+long Concatenate(long first, long second)
+{
+    var numberOfDigits = Math.Floor(Math.Log10(second) + 1);
+    return first * (long)Math.Pow(10, numberOfDigits) + second;
 }
 
 record IncompleteEquation(long Result, List<long> Values);
