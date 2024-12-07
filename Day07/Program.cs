@@ -1,5 +1,6 @@
 ﻿using Common;
 using Serilog;
+using System.Diagnostics;
 
 ILogger logger = new LoggerSetup().Logger;
 
@@ -28,21 +29,27 @@ List<IncompleteEquation> ParseInput(string filepath)
 void SolvePart1(string filepath)
 {
     var equations = ParseInput(filepath);
+
+    var sw = Stopwatch.StartNew();
     long sum = equations
         .Where(e => IsPossible(e))
         .Sum(e => e.Result);
+    sw.Stop();
 
-    logger.Information("[Part1:{File}] {Result}", filepath, sum);
+    logger.Information("[Part1:{File}] {Result}  {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
 }
 
 void SolvePart2(string filepath)
 {
     var equations = ParseInput(filepath);
+
+    var sw = Stopwatch.StartNew();
     long sum = equations
         .Where(e => IsPossible(e, enableConcatenation: true))
         .Sum(e => e.Result);
+    sw.Stop();
 
-    logger.Information("[Part2:{File}] {Result}", filepath, sum);
+    logger.Information("[Part2:{File}] {Result}  {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
 }
 
 bool IsPossible(IncompleteEquation equation, bool enableConcatenation = false)
@@ -52,6 +59,9 @@ bool IsPossible(IncompleteEquation equation, bool enableConcatenation = false)
 
     if (equation.Values.Count == 1)
         return equation.Result == equation.Values[0];
+
+    if (equation.Values[0] > equation.Result)
+        return false;
 
     var addition = equation.Values[0] + equation.Values[1];
     var additionEquation = equation with { Values = [addition, .. equation.Values[2..]] };
