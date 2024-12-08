@@ -8,6 +8,8 @@ var filename = "Input/example.txt";
 
 SolvePart1("Input/example.txt");
 SolvePart1("Input/input.txt");
+SolvePart2("Input/example.txt");
+SolvePart2("Input/input.txt");
 
 
 void SolvePart1(string filepath)
@@ -36,12 +38,11 @@ void SolvePart1(string filepath)
             var dx = antenna2.X - antenna1.X;
             var dy = antenna2.Y - antenna1.Y;
 
-
             var antinode1 = new Coordinates(antenna1.X - dx, antenna1.Y - dy);
             var antinode2 = new Coordinates(antenna2.X + dx, antenna2.Y + dy);
 
-            AddAntinode(antinodeMask, antinode1);
-            AddAntinode(antinodeMask, antinode2);
+            TryAddAntinode(antinodeMask, antinode1);
+            TryAddAntinode(antinodeMask, antinode2);
         }
     }
 
@@ -52,6 +53,63 @@ void SolvePart1(string filepath)
 
     var uniqueAntinodes = antinodeMask.Cast<bool>().Count(b => b);
     logger.Information("[Part1:{Filepath}] {UniqueAntinodes}", filename, uniqueAntinodes);
+}
+
+void SolvePart2(string filepath)
+{
+    var content = File.ReadAllText(filepath);
+    var grid = GridUtils.ParseGrid(content, c => c);
+
+    if (logger.IsEnabled(LogEventLevel.Debug))
+    {
+        logger.Debug("{Grid}", GridUtils.GridString(grid, c => c.ToString()));
+    }
+
+    var rows = grid.GetLength(0);
+    var cols = grid.GetLength(1);
+
+    var antinodeMask = new bool[rows, cols];
+
+    var frequencies = GetFrequencies(grid);
+
+    foreach (var (frequency, antennas) in frequencies)
+    {
+        var connections = GetConnections(antennas);
+
+        foreach (var (antenna1, antenna2) in connections)
+        {
+            var dx = antenna2.X - antenna1.X;
+            var dy = antenna2.Y - antenna1.Y;
+
+            AddAntinodes(antinodeMask, antenna1, -dx, -dy);
+            AddAntinodes(antinodeMask, antenna2, dx, dy);
+        }
+    }
+
+    if (logger.IsEnabled(LogEventLevel.Debug))
+    {
+        logger.Debug("{Antinodes}", GridUtils.GridString(antinodeMask, b => b ? "1" : "0"));
+    }
+
+    var uniqueAntinodes = antinodeMask.Cast<bool>().Count(b => b);
+    logger.Information("[Part2:{Filepath}] {UniqueAntinodes}", filename, uniqueAntinodes);
+}
+
+void AddAntinodes(bool[,] antinodeMask, Coordinates antenna, int dx, int dy)
+{
+    var index = 0;
+
+    while (true)
+    {
+        var antinode = new Coordinates(antenna.X + dx * index, antenna.Y + dy * index);
+
+        var isInBounds = TryAddAntinode(antinodeMask, antinode);
+
+        if (!isInBounds)
+            break;
+
+        index++;
+    }
 }
 
 Dictionary<char, List<Coordinates>> GetFrequencies(char[,] grid)
@@ -89,7 +147,7 @@ IEnumerable<(Coordinates, Coordinates)> GetConnections(List<Coordinates> antenna
     }
 }
 
-void AddAntinode(bool[,] antinodeMask, Coordinates coordinates)
+bool TryAddAntinode(bool[,] antinodeMask, Coordinates coordinates)
 {
     var rows = antinodeMask.GetLength(0);
     var cols = antinodeMask.GetLength(1);
@@ -100,9 +158,10 @@ void AddAntinode(bool[,] antinodeMask, Coordinates coordinates)
         && coordinates.Y < rows;
 
     if (!isInBounds)
-        return;
+        return false;
 
     antinodeMask[coordinates.Y, coordinates.X] = true;
+    return true;
 }
 
 record struct Coordinates(int X, int Y);
