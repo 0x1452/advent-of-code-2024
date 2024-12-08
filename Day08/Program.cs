@@ -97,18 +97,11 @@ void SolvePart2(string filepath)
 
 void AddAntinodes(bool[,] antinodeMask, Coordinates antenna, int dx, int dy)
 {
-    var index = 0;
-
-    while (true)
+    var antinode = new Coordinates(antenna.X, antenna.Y);
+    while (TryAddAntinode(antinodeMask, antinode))
     {
-        var antinode = new Coordinates(antenna.X + dx * index, antenna.Y + dy * index);
-
-        var isInBounds = TryAddAntinode(antinodeMask, antinode);
-
-        if (!isInBounds)
-            break;
-
-        index++;
+        antinode.X += dx;
+        antinode.Y += dy;
     }
 }
 
