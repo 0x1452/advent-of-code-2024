@@ -74,7 +74,7 @@ void SolvePart2(string filepath)
         if (startIndex >= endIndex)
             break;
 
-        var storageBlock = GetBlock(storage[endIndex], endIndex, storage, ascending: false);
+        var storageBlock = GetBlock(endIndex, storage, ascending: false);
         var storageBlockSize = storageBlock.EndIndex - storageBlock.StartIndex + 1;
 
         Block? freeBlock = null;
@@ -86,11 +86,8 @@ void SolvePart2(string filepath)
             if (startIndex >= storageBlock.StartIndex)
                 break;
 
-            freeBlock = GetBlock(null, startIndex, storage, ascending: true);
+            freeBlock = GetBlock(startIndex, storage, ascending: true);
             freeBlockSize = freeBlock.EndIndex - freeBlock.StartIndex + 1;
-
-            if (freeBlock.StartIndex >= storageBlock.StartIndex)
-                break;
 
             if (storageBlockSize <= freeBlockSize)
             {
@@ -129,10 +126,10 @@ void SolvePart2(string filepath)
     logger.Information("[Part2:{Filepath}] {Checksum}", filepath, checksum);
 }
 
-Block GetBlock(long? targetValue, int startIndex, long?[] storage, bool ascending)
+Block GetBlock(int startIndex, long?[] storage, bool ascending)
 {
     var difference = ascending ? 1 : -1;
-        
+    var targetValue = storage[startIndex];
     var endIndex = startIndex;
 
     for (int i = startIndex; i >= 0 && i < storage.Length; i += difference)
