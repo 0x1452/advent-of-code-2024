@@ -1,6 +1,7 @@
 ﻿using Common;
 using Serilog;
 using Serilog.Events;
+using System.Diagnostics;
 
 ILogger logger = new LoggerSetup().Logger;
 
@@ -8,6 +9,8 @@ SolvePart1("Input/example.txt");
 SolvePart1("Input/input.txt");
 SolvePart2("Input/example.txt");
 SolvePart2("Input/input.txt");
+SolvePart2_2("Input/example.txt");
+SolvePart2_2("Input/input.txt");
 
 void SolvePart1(string filepath)
 {
@@ -16,6 +19,7 @@ void SolvePart1(string filepath)
     if (logger.IsEnabled(LogEventLevel.Debug))
         logger.Debug("{Storage}", string.Join(" ", storage.Select(i => i is not null ? i.Value.ToString() : ".")));
 
+    var sw = Stopwatch.StartNew();
     var endIndex = storage.Length - 1;
 
     for (int i = 0; i < storage.Length; i++)
@@ -48,9 +52,14 @@ void SolvePart1(string filepath)
         checksum += i * (storage[i] ?? 0);
     }
 
-    logger.Information("[Part1:{Filepath}] {Checksum}", filepath, checksum);
+    sw.Stop();
+
+    logger.Information("[Part1:{Filepath}] {Checksum} {ElapsedMs}ms", filepath, checksum, sw.Elapsed.TotalMilliseconds);
 }
 
+// Doing some unnecessary stuff here again: you don't need to recreate the actual storage, just keep track of indices/lengths of each block.
+// I tried to properly plan ahead for other challenges but jumped into code too early for this one.
+// -> see SolvePart2_2 for a better approach...
 void SolvePart2(string filepath)
 {
     long?[] storage = ParseInput(filepath);
@@ -58,11 +67,11 @@ void SolvePart2(string filepath)
     if (logger.IsEnabled(LogEventLevel.Debug))
         logger.Debug("{Storage}", string.Join(" ", storage.Select(i => i is not null ? i.Value.ToString() : ".")));
 
+    var sw = Stopwatch.StartNew();
     var endIndex = storage.Length - 1;
-
     long? lowestBlockIdProcessed = int.MaxValue;
 
-    while (true) 
+    while (true)
     {
         var startIndex = Array.IndexOf(storage, null);
 
@@ -123,7 +132,84 @@ void SolvePart2(string filepath)
         checksum += i * (storage[i] ?? 0);
     }
 
-    logger.Information("[Part2:{Filepath}] {Checksum}", filepath, checksum);
+    sw.Stop();
+
+    logger.Information("[Part2:{Filepath}] {Checksum} {ElapsedMs}ms", filepath, checksum, sw.Elapsed.TotalMilliseconds);
+}
+
+
+void SolvePart2_2(string filepath)
+{
+    var totalLength = 0;
+
+    var input = File.ReadAllText(filepath).Trim().Select(c => (int)char.GetNumericValue(c)).ToList();
+
+    var sw = Stopwatch.StartNew();
+
+    var fileBlocks = new List<FileBlock>();
+    var emptyBlocks = new List<EmptyBlock>();
+
+    var id = 0;
+    for (int i = 0; i < input.Count; i++)
+    {
+        if (i % 2 == 0)
+        {
+            fileBlocks.Add(new FileBlock
+            {
+                Id = id++,
+                StartIndex = totalLength,
+                Length = input[i]
+            });
+        }
+        else
+        {
+            emptyBlocks.Add(new EmptyBlock
+            {
+                StartIndex = totalLength,
+                Length = input[i]
+            });
+        }
+
+        totalLength += input[i];
+    }
+
+    for (int fileIndex = fileBlocks.Count - 1; fileIndex >= 0; fileIndex--)
+    {
+        var fileBlock = fileBlocks[fileIndex];
+        var fileBlockStart = fileBlock.StartIndex;
+        var fileBlockLength = fileBlock.Length;
+
+        for (int emptyIndex = 0; emptyIndex < emptyBlocks.Count + 1; emptyIndex++)
+        {
+            var emptyBlock = emptyBlocks[emptyIndex];
+
+            if (emptyBlock.StartIndex >= fileBlockStart)
+                break;
+
+            if (emptyBlock.Length >= fileBlock.Length)
+            {
+                fileBlock.StartIndex = emptyBlock.StartIndex;
+
+                emptyBlock.StartIndex += fileBlockLength;
+                emptyBlock.Length -= fileBlockLength;
+
+                break;
+            }
+        }
+    }
+
+    long checksum = 0;
+    foreach (var fileBlock in fileBlocks)
+    {
+        for (int i = 0; i < fileBlock.Length; i++)
+        {
+            checksum += fileBlock.Id * (fileBlock.StartIndex + i);
+        }
+    }
+
+    sw.Stop();
+
+    logger.Information("[Part2_2:{Filepath}] {Checksum} {ElapsedMs}ms", filepath, checksum, sw.Elapsed.TotalMilliseconds);
 }
 
 Block GetBlock(int startIndex, long?[] storage, bool ascending)
@@ -141,7 +227,7 @@ Block GetBlock(int startIndex, long?[] storage, bool ascending)
         }
     }
 
-    return ascending 
+    return ascending
         ? new Block(startIndex, endIndex)
         : new Block(endIndex, startIndex);
 }
@@ -179,3 +265,16 @@ static long?[] ParseInput(string filename)
 }
 
 record Block(int StartIndex, int EndIndex);
+
+class FileBlock
+{
+    public int Id { get; set; }
+    public int StartIndex { get; set; }
+    public int Length { get; set; }
+}
+
+class EmptyBlock
+{
+    public int StartIndex { get; set; }
+    public int Length { get; set; }
+}
