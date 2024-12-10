@@ -1,9 +1,10 @@
 ﻿
 using Common;
-using Serilog.Events;
 using System.Diagnostics;
 
 var logger = new LoggerSetup().Logger;
+
+(int, int)[] directions = [(-1, 0), (1, 0), (0, 1), (0, -1)];
 
 Solve("Input/example.txt");
 Solve("Input/input.txt");
@@ -13,19 +14,14 @@ void Solve(string filepath)
     var content = File.ReadAllText(filepath);
     var grid = GridUtils.ParseGrid(content, c => int.Parse(c.ToString()));
 
-    if (logger.IsEnabled(LogEventLevel.Debug))
-        logger.Debug("{Grid}", GridUtils.GridString(grid, i => i.ToString()));;
+    logger.Debug("{Grid}", GridUtils.GridString(grid, i => i.ToString()));;
 
     var sw = Stopwatch.StartNew();
     var rows = grid.GetLength(0);
     var cols = grid.GetLength(1);
 
-    var targetValue = 9;
-
-    (int, int)[] directions = [(-1, 0), (1, 0), (0, 1), (0, -1)];
-
-    var sum = 0;
-    var distinctSum = 0;
+    var targetCount = 0;
+    var distinctCount = 0;
     for (int x = 0; x < cols; x++)
     {
         for (int y = 0; y < rows; y++)
@@ -33,9 +29,9 @@ void Solve(string filepath)
             if (grid[y, x] == 0)
             {
                 var targetsReached = new HashSet<(int x, int y)>();
-                distinctSum += TraverseTrails(grid, x, y, targetValue, directions, targetsReached);
+                distinctCount += TraverseTrails(grid, x, y, targetsReached);
 
-                sum += targetsReached.Count;
+                targetCount += targetsReached.Count;
 
                 logger.Debug("[{X}, {Y}] {Score}", x, y, targetsReached.Count);
             }
@@ -43,17 +39,17 @@ void Solve(string filepath)
     }
     sw.Stop();
 
-    logger.Information("[Part1:{Filepath}] {TrailheadScore} {ElapsedMs}ms", filepath, sum, sw.Elapsed.TotalMilliseconds);
-    logger.Information("[Part2:{Filepath}] {TrailheadScore} {ElapsedMs}ms", filepath, distinctSum, sw.Elapsed.TotalMilliseconds);
+    logger.Information("[Part1:{Filepath}] {TrailheadScore} {ElapsedMs}ms", filepath, targetCount, sw.Elapsed.TotalMilliseconds);
+    logger.Information("[Part2:{Filepath}] {TrailheadScore} {ElapsedMs}ms", filepath, distinctCount, sw.Elapsed.TotalMilliseconds);
 }
 
-int TraverseTrails(int[,] grid, int x, int y, int targetValue, IEnumerable<(int dx, int dy)> directions, HashSet<(int x, int y)> targetsReached)
+int TraverseTrails(int[,] grid, int x, int y, HashSet<(int x, int y)> targetsReached)
 {
     var startValue = grid[y, x];
 
     var distinctSum = 0;
 
-    if (startValue == targetValue)
+    if (startValue == 9)
     {
         targetsReached.Add((x, y));
         return 1;
@@ -70,7 +66,7 @@ int TraverseTrails(int[,] grid, int x, int y, int targetValue, IEnumerable<(int 
         var nextValue = grid[nextY, nextX];
 
         if (nextValue == startValue + 1)
-            distinctSum += TraverseTrails(grid, nextX, nextY, targetValue, directions, targetsReached);
+            distinctSum += TraverseTrails(grid, nextX, nextY, targetsReached);
     }
 
     return distinctSum;
