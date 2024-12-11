@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 
-Dictionary<long, (long? first, long second)> stoneCache = [];
-Dictionary<(long? first, long second, int iterationsLeft), long> iterationCache = [];
+Dictionary<(long, int), long> iterationCache = [];
 
 Solve("Input/example.txt", 6);
 Solve("Input/input.txt", 25);
@@ -16,52 +15,28 @@ void Solve(string filepath, int iterations)
 
     var sw = Stopwatch.StartNew();
 
-    long count = 0;
-    foreach (var stone in stones)
-    {
-        count += ProcessStones(null, stone, iterations);
-    }
+
+    var count = stones.Sum(s => ProcessStone(s, iterations));
 
     sw.Stop();
 
     Console.WriteLine($"[{filepath}:{iterations}] {count} {sw.Elapsed.TotalMilliseconds}ms");
 }
 
-long ProcessStones(long? first, long second, int iterationsLeft)
+
+long ProcessStone(long stone, int iterationsLeft)
 {
     if (iterationsLeft == 0)
-        return first.HasValue ? 2 : 1;
+        return 1;
 
-    if (iterationCache.TryGetValue((first, second, iterationsLeft), out var count))
+    if (iterationCache.TryGetValue((stone, iterationsLeft), out var count))
         return count;
 
-    long sum = 0;
-
-    var (a, b) = ProcessStone(second);
-    sum += ProcessStones(a, b, iterationsLeft - 1);
-
-    if (first.HasValue)
-    {
-        (a, b) = ProcessStone(first.Value);
-        sum += ProcessStones(a, b, iterationsLeft - 1);
-    }
-
-    iterationCache.TryAdd((first, second, iterationsLeft), sum);
-    return sum;
-}
-
-(long? first, long second) ProcessStone(long stone)
-{
-    if (stoneCache.TryGetValue(stone, out var cachedResult))
-    {
-        return cachedResult;
-    }
-
-    (long?, long) result;
+    long result;
     int digitCount;
     if (stone == 0)
     {
-        result = (null, 1);
+        result = ProcessStone(1, iterationsLeft - 1);
     }
     else if ((digitCount = CountDigits(stone)) % 2 == 0)
     {
@@ -69,25 +44,16 @@ long ProcessStones(long? first, long second, int iterationsLeft)
         var firstHalf = stone / divisor;
         var secondHalf = stone % divisor;
 
-        result = (firstHalf, secondHalf);
+        result = ProcessStone(firstHalf, iterationsLeft - 1) + ProcessStone(secondHalf, iterationsLeft - 1);
     }
     else
     {
-        result = (null, stone * 2024);
+        result = ProcessStone(stone * 2024, iterationsLeft - 1);
     }
 
-    stoneCache.TryAdd(stone, result);
+    iterationCache.TryAdd((stone, iterationsLeft), result);
     return result;
 }
 
 int CountDigits(long value)
-{
-    int digits = 0;
-    do
-    {
-        digits++;
-        value /= 10;
-    } while (value > 0);
-
-    return digits;
-}
+    => (int)Math.Log10(value) + 1;
