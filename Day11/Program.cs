@@ -57,10 +57,11 @@ long ProcessStones(long? first, long second, int iterationsLeft)
         return cachedResult;
     }
 
+    (long?, long) result;
     int digitCount;
     if (stone == 0)
     {
-        return (null, 1);
+        result = (null, 1);
     }
     else if ((digitCount = CountDigits(stone)) % 2 == 0)
     {
@@ -68,12 +69,15 @@ long ProcessStones(long? first, long second, int iterationsLeft)
         var firstHalf = stone / divisor;
         var secondHalf = stone % divisor;
 
-        return (firstHalf, secondHalf);
+        result = (firstHalf, secondHalf);
     }
     else
     {
-        return (null, stone * 2024);
+        result = (null, stone * 2024);
     }
+
+    stoneCache.TryAdd(stone, result);
+    return result;
 }
 
 int CountDigits(long value)
