@@ -4,7 +4,13 @@ using System.Text;
 namespace Common;
 
 public class GridUtils
-{
+{    
+    /// <summary> List of (dx, dy) to get the direct neighbors (not including diagonals) </summary>
+    public static (int dx, int dy)[] Directions4 = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+
+    /// <summary> List of (dx, dy) to get all neighbors (including diagonals) </summary>
+    public static (int dx, int dy)[] Directions8 = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)];
+
     public static T[,] ParseGrid<T>(string input, Func<char, T> parseElement)
     {
         var lines = input.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim()).ToList();
@@ -128,6 +134,17 @@ public class GridUtils
         }
     }
 
+    public static bool IsOutOfBounds<T>(T[,] grid, int x, int y)
+    {
+        var rows = grid.GetLength(0);
+        var cols = grid.GetLength(1);
+
+        return x < 0
+            || x >= cols
+            || y < 0
+            || y >= rows;
+    }
+
     public static T[,] GetSubgrid<T>(T[,] grid, int startY, int startX, int width, int height)
     {
         int rows = grid.GetLength(0);
@@ -148,4 +165,5 @@ public class GridUtils
 
         return subgrid;
     }
+
 }
