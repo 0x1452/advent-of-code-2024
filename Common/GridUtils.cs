@@ -166,4 +166,15 @@ public class GridUtils
         return subgrid;
     }
 
+    public static bool TryGet<T>(T[,] grid, int x, int y, out T? value)
+    {
+        if (IsOutOfBounds(grid, x, y))
+        {
+            value = default;
+            return false;
+        }
+
+        value = grid[y, x];
+        return true;
+    }
 }
