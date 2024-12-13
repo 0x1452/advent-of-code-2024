@@ -87,7 +87,17 @@ public class Part2
 
         var sides = CountRows(perimeterMask) + CountColumns(perimeterMask);
 
-        //Console.WriteLine($"{targetValue}: Area {area}, Sides {sides}, Perimeter {perimeter}");
+        //if (sides % 2 != 0)
+        //{
+        //    Console.WriteLine(GridUtils.GridString(perimeterMask, cellType => cellType switch
+        //    {
+        //        CellType.Perimeter => "X",
+        //        CellType.Area => " ",
+        //        _ => ".",
+        //    }));
+        //    Console.WriteLine($"{targetValue}: Area {area}, Sides {sides}, Perimeter {perimeter}");
+        //}
+
         return area * sides;
     }
 
@@ -101,7 +111,7 @@ public class Part2
         {
             var isSide = false;
 
-            var directionsWithArea = new HashSet<Direction>();
+            var adjacentDirectionsWithArea = new HashSet<Direction>();
 
             for (int x = 0; x < cols; x++)
             {
@@ -113,9 +123,9 @@ public class Part2
 
                 if (isSide && !isPerimeter)
                 {
-                    sides += directionsWithArea.Count;
+                    sides += adjacentDirectionsWithArea.Count;
                     isSide = false;
-                    directionsWithArea.Clear();
+                    adjacentDirectionsWithArea.Clear();
                     continue;
                 }
 
@@ -126,8 +136,8 @@ public class Part2
 
                 isSide = true;
 
-                if (cellUp == CellType.Area) directionsWithArea.Add(Direction.Up);
-                if (cellDown == CellType.Area) directionsWithArea.Add(Direction.Down);
+                sides += UpdateAdjacentDirections(adjacentDirectionsWithArea, cellUp, Direction.Up);
+                sides += UpdateAdjacentDirections(adjacentDirectionsWithArea, cellDown, Direction.Down);
             }
         }
 
@@ -144,7 +154,7 @@ public class Part2
         {
             var isSide = false;
 
-            var directionsWithArea = new HashSet<Direction>();
+            var adjacentDirectionsWithArea = new HashSet<Direction>();
 
             for (int y = 0; y < rows; y++)
             {
@@ -156,9 +166,9 @@ public class Part2
 
                 if (isSide && !isPerimeter)
                 {
-                    sides += directionsWithArea.Count;
+                    sides += adjacentDirectionsWithArea.Count;
                     isSide = false;
-                    directionsWithArea.Clear();
+                    adjacentDirectionsWithArea.Clear();
                     continue;
                 }
 
@@ -169,12 +179,28 @@ public class Part2
 
                 isSide = true;
 
-                if (cellLeft == CellType.Area) directionsWithArea.Add(Direction.Left);
-                if (cellRight == CellType.Area) directionsWithArea.Add(Direction.Right);
+                sides += UpdateAdjacentDirections(adjacentDirectionsWithArea, cellLeft, Direction.Left);
+                sides += UpdateAdjacentDirections(adjacentDirectionsWithArea, cellRight, Direction.Right);
             }
         }
 
         return sides;
+    }
+
+    private static int UpdateAdjacentDirections(HashSet<Direction> adjacentDirectionsWithArea, CellType cellUp, Direction direction)
+    {
+        var hadDirection = adjacentDirectionsWithArea.Contains(direction);
+        if (!hadDirection && cellUp == CellType.Area)
+        {
+            adjacentDirectionsWithArea.Add(direction);
+        }
+        else if (hadDirection && cellUp != CellType.Area)
+        {
+            adjacentDirectionsWithArea.Remove(direction);
+            return 1;
+        }
+
+        return 0;
     }
 
     static char[,] ParseInput(string filepath)
