@@ -49,7 +49,7 @@ public class Part1
             var point = queue.Dequeue();
 
             area++;
-            foreach (var (x, y) in EnumerateNeighbors(grid, point.X, point.Y))
+            foreach (var (x, y) in EnumerateNeighbors(point.X, point.Y))
             {
                 if (GridUtils.IsOutOfBounds(grid, x, y))
                 {
@@ -83,7 +83,7 @@ public class Part1
         return GridUtils.ParseGrid(content, c => c);
     }
 
-    static IEnumerable<(int x, int y)> EnumerateNeighbors(char[,] grid, int x, int y)
+    static IEnumerable<(int x, int y)> EnumerateNeighbors(int x, int y)
     {
         foreach (var (dx, dy) in GridUtils.Directions4)
         {
