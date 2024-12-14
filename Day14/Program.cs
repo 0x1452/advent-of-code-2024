@@ -8,18 +8,19 @@ SolvePart1("Input/input.txt", gridLength: 101, gridHeight: 103, iterations: 100)
 //SolvePart1("Input/debug.txt", gridLength: 11, gridHeight: 7, iterations: 5);
 //ExplorePart2("Input/input.txt", gridLength: 101, gridHeight: 103, start: 600, iterations: 10000);
 
-ExplorePart2("Input/input.txt", gridLength: 101, gridHeight: 103, start: 325, iterations: 100000, steps: 101);
+//ExplorePart2("Input/input.txt", gridLength: 101, gridHeight: 103, start: 325, iterations: 100000, steps: 101);
 //ExplorePart2("Input/input.txt", gridLength: 101, gridHeight: 103, start: 10021, iterations: 100000, steps: 101);
 // 325
 // 426
 // 6587
 
-// "manually" solved part 2:
+// my first part 2 solution was "manual":
 // - iterate over grid states and print to (zoomed out) console
 // - notice repeating pattern every `101` iterations
 // - iterate over grid state in steps of `101` and check console until you see the tree
 // - win
 
+ExplorePart2("Input/input.txt", gridLength: 101, gridHeight: 103, start: 325, iterations: 100000, steps: 1);
 
 void ExplorePart2(string filepath, int gridLength, int gridHeight, int start, int iterations, int steps)
 {
@@ -37,10 +38,38 @@ void ExplorePart2(string filepath, int gridLength, int gridHeight, int start, in
             debugGrid[finalY, finalX] += 1;
         }
 
-        Console.WriteLine(i);
-        Console.WriteLine(GridUtils.GridString(debugGrid, c => $"{(c == 0 ? "." : c)} "));
+        // Look for grids with rows containing robots in an uninterrupted line
+        var mightBeInteresting = false;
+        foreach (var row in GridUtils.EnumerateRows(debugGrid))
+        {
+            int currentStreak = 0;
+            int maxStreak = 0;
 
-        Task.Delay(100).Wait();
+            foreach (var num in row)
+            {
+                if (num >= 1)
+                {
+                    currentStreak++;
+                    maxStreak = Math.Max(maxStreak, currentStreak);
+                }
+                else
+                {
+                    currentStreak = 0;
+                }
+            }
+
+            if (maxStreak > 7)
+            {
+                mightBeInteresting = true;
+                break;
+            }
+        }
+
+        if (mightBeInteresting)
+        {
+            Console.WriteLine($"[Part2] {i}");
+            Console.WriteLine(GridUtils.GridString(debugGrid, c => $"{(c == 0 ? "." : c)} "));
+        }
     }
 }
 
