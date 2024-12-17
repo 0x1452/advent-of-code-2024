@@ -4,7 +4,7 @@ using System.Text;
 namespace Common;
 
 public class GridUtils
-{    
+{
     /// <summary> List of (dx, dy) to get the direct neighbors (not including diagonals) </summary>
     public static (int dx, int dy)[] Directions4 = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
