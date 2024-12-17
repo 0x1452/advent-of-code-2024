@@ -1,19 +1,27 @@
 ﻿using Common;
 using Common.AStar;
+using Day16;
 
-var input = File.ReadAllText("Input/example.txt");
 
-var (searchParameters, debugGrid) = ParseInput(input);
-var aStar = new AStarOrthogonal(searchParameters);
+SolvePart1("Input/example.txt");
+SolvePart1("Input/example2.txt");
+SolvePart1("Input/input.txt");
 
-Console.WriteLine(GridUtils.GridString(debugGrid, c => c.ToString()));
-var path = aStar.GetPath();
-foreach (var point in path)
+void SolvePart1(string filepath)
 {
-    debugGrid[point.Y, point.X] = 'x';
-}
-Console.WriteLine(GridUtils.GridString(debugGrid, c => c.ToString()));
+    var input = File.ReadAllText(filepath);
+    var (searchParameters, debugGrid) = ParseInput(input);
+    var aStar = new ReindeerAStar(searchParameters);
 
+    var path = aStar.GetPath();
+    foreach (var node in path)
+    {
+        debugGrid[node.Location.Y, node.Location.X] = 'x';
+    }
+    Console.WriteLine(GridUtils.GridString(debugGrid, c => c.ToString()));
+
+    Console.WriteLine($"[Part1:{filepath}] {path.Last().CostFromStart}");
+}
 
 static (SearchParameters, char[,]) ParseInput(string input)
 {
