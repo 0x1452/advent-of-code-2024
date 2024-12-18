@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Day17;
+﻿namespace Day17;
 public struct Instruction
 {
     public byte Opcode { get; set; }
@@ -13,26 +7,34 @@ public struct Instruction
 
 public class ChronospatialComputer
 {
-    public int A { get; set; }
-    public int B { get; set; }
-    public int C { get; set; }
+    public long A { get; set; }
+    public long B { get; set; }
+    public long C { get; set; }
     public int IP { get; set; }
 
     public List<byte> Instructions { get; set; } = [];
     public List<byte> Output { get; set; } = [];
 
-    public ChronospatialComputer(int a, int b, int c, List<byte> instructions)
+    private readonly bool _debug = false;
+
+    public ChronospatialComputer(long a, long b, long c, List<byte> instructions, bool debug = false)
     {
         A = a;
         B = b;
         C = c;
         Instructions = instructions;
+        _debug = debug;
     }
 
     public void Run()
     {
         while (TryGetNextInstruction(out var instruction))
         {
+            if (_debug)
+            {
+                PrintStatus();
+                PrintInstruction(instruction);
+            }
             ExecuteInstruction(instruction);
         }
     }
@@ -81,11 +83,14 @@ public class ChronospatialComputer
     }
 
     private void ExecuteADV(byte operand)
-        => A = (int)(A / Math.Pow(2, GetOperandValue(operand)));
+        => A = (long)(A / Math.Pow(2, GetOperandValue(operand)));
+        //=> A = A >> GetOperandValue(operand);
     private void ExecuteBDV(byte operand)
-        => B = (int)(A / Math.Pow(2, GetOperandValue(operand)));
+        => B = (long)(A / Math.Pow(2, GetOperandValue(operand)));
+        //=> B = A >> GetOperandValue(operand);
     private void ExecuteCDV(byte operand)
-        => C = (int)(A / Math.Pow(2, GetOperandValue(operand)));
+        => C = (long)(A / Math.Pow(2, GetOperandValue(operand)));
+        //=> C = A >> GetOperandValue(operand);
     private void ExecuteBXC()
         => B = B ^ C;
     private void ExecuteBXL(byte operand)
@@ -106,7 +111,7 @@ public class ChronospatialComputer
         Output.Add((byte)(GetOperandValue(operand) % 8));
     }
 
-    private int GetOperandValue(byte operand)
+    private long GetOperandValue(byte operand)
     {
         return operand switch
         {
@@ -137,4 +142,41 @@ public class ChronospatialComputer
 
         return true;
     }
+
+    private void PrintStatus()
+    {
+        Console.WriteLine($"A: {A,-10} ({Convert.ToString(A, 2)})");
+        Console.WriteLine($"B: {B,-10} ({Convert.ToString(B, 2)})");
+        Console.WriteLine($"C: {C,-10} ({Convert.ToString(C, 2)})");
+        Console.WriteLine($"IP: {IP}");
+    }
+
+    private void PrintInstruction(Instruction instruction)
+    {
+        var comboOperandName = GetOperandName(instruction.Operand);
+        var (operationName, description) = instruction.Opcode switch
+        {
+            0 => ("adv", $"A = A >> {comboOperandName}"),
+            1 => ("bxl", $"B = B ^ {instruction.Operand}"),
+            2 => ("bst", $"B = {comboOperandName} % 8"),
+            3 => ("jnz", A == 0 ? "NOP" : $"IP = {instruction.Operand}"),
+            4 => ("bxc", $"B = B ^ C"),
+            5 => ("out", $"Output += {comboOperandName} % 8"),
+            6 => ("bdv", $"B = A >> {comboOperandName}"),
+            7 => ("cdv", $"C = A >> {comboOperandName}"),
+            _ => throw new ArgumentException($"Invalid opcode: '{instruction.Opcode}'", nameof(instruction))
+        };
+
+        Console.WriteLine($"{operationName}   {description}");
+    }
+
+    private string GetOperandName(byte operand)
+        => operand switch
+        {
+            0 or 1 or 2 or 3 => operand.ToString(),
+            4 => "A",
+            5 => "B",
+            6 => "C",
+            _ => throw new ArgumentException($"Invalid operand: '{operand}'", nameof(operand))
+        };
 }
