@@ -28,13 +28,9 @@ void SolvePart2(string filepath)
 
     var target = computer.Instructions.ToArray();
 
-    // Minimum number required to get 16 numbers as result
-    // -> A is processed in chunks of 3 bits, this one has 46 bit -> just enough for 15 full chunks and the least significant bit of the last chunk
-    long start = 1 << 45;
+    long start = 0;
 
     //Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
-
-    // Idea now is to just bruteforce each 3 bit chunk individually
 
     var foundMatch = false;
 
@@ -105,9 +101,7 @@ void SolvePart2_2(string filepath)
 
     var target = computer.Instructions.ToArray();
 
-    // Minimum number required to get 16 numbers as result
-    // -> A is processed in chunks of 3 bits, this one has 46 bit -> just enough for 15 full chunks and the least significant bit of the last chunk
-    long start = 1 << 45;
+    long start = 0;
 
     //Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
