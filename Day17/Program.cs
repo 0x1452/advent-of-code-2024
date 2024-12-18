@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Day17;
 
 var registerRegex = new Regex(@"Register [A|B|C]: (\d+)");
@@ -31,7 +32,7 @@ void SolvePart2(string filepath)
     // -> A is processed in chunks of 3 bits, this one has 46 bit -> just enough for 15 full chunks and the least significant bit of the last chunk
     long start = 1 << 45;
 
-    Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
+    //Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
     // Idea now is to just bruteforce each 3 bit chunk individually
 
@@ -52,14 +53,14 @@ void SolvePart2(string filepath)
             // set the current chunk to 0
             start &= ~((long)0b111 << (c * 3));
 
-            Console.WriteLine($"Cleared:  {Convert.ToString(start, 2).PadLeft(48, '0')}");
+            //Console.WriteLine($"Cleared:  {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
             var newChunk = originalChunk + 1;
 
             // replace with our new value
             start |= (newChunk << (c * 3));
 
-            Console.WriteLine($"Replaced: {Convert.ToString(start, 2).PadLeft(48, '0')}");
+            //Console.WriteLine($"Replaced: {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
             computer.Output.Clear();
             computer.A = start;
@@ -71,11 +72,10 @@ void SolvePart2(string filepath)
 
             Console.WriteLine(string.Join(",", computer.Output));
 
-            //if (computer.Output[0..(c + 1)].SequenceEqual(target[0..(c + 1)]))
             if (computer.Output.Skip(c).SequenceEqual(target.Skip(c)))
             {
                 foundMatch = true;
-                Console.WriteLine($"Chunk {c} is done");
+                //Console.WriteLine($"Chunk {c} is done");
                 break;
             }
         }
@@ -101,13 +101,15 @@ void SolvePart2_2(string filepath)
 {
     var computer = ParseInput(filepath);
 
+    var sw = Stopwatch.StartNew();
+
     var target = computer.Instructions.ToArray();
 
     // Minimum number required to get 16 numbers as result
     // -> A is processed in chunks of 3 bits, this one has 46 bit -> just enough for 15 full chunks and the least significant bit of the last chunk
-    long start = 35184372088832;
+    long start = 1 << 45;
 
-    Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
+    //Console.WriteLine($"Start:    {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
     var foundMatch = false;
 
@@ -126,14 +128,14 @@ void SolvePart2_2(string filepath)
             // set the current chunk to 0
             start &= ~((long)0b111111 << (c * 6));
 
-            Console.WriteLine($"Cleared:  {Convert.ToString(start, 2).PadLeft(48, '0')}");
+            //Console.WriteLine($"Cleared:  {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
             var newChunk = originalChunk + 1;
 
             // replace with our new value
             start |= (newChunk << (c * 6));
 
-            Console.WriteLine($"Replaced: {Convert.ToString(start, 2).PadLeft(48, '0')}");
+            //Console.WriteLine($"Replaced: {Convert.ToString(start, 2).PadLeft(48, '0')}");
 
             computer.Output.Clear();
             computer.A = start;
@@ -143,13 +145,12 @@ void SolvePart2_2(string filepath)
 
             computer.Run();
 
-            Console.WriteLine(string.Join(",", computer.Output));
+            //Console.WriteLine(string.Join(",", computer.Output));
 
-            //if (computer.Output[0..(c + 1)].SequenceEqual(target[0..(c + 1)]))
             if (computer.Output.Skip(c*2).SequenceEqual(target.Skip(c*2)))
             {
                 foundMatch = true;
-                Console.WriteLine($"Chunk {c} is done");
+                //Console.WriteLine($"Chunk {c} is done");
                 break;
             }
         }
@@ -166,10 +167,11 @@ void SolvePart2_2(string filepath)
         }
     }
 
-    var result = string.Join(",", computer.Output);
-    Console.WriteLine($"[Part2:{filepath}] {result} {start}");
-}
+    sw.Stop();
 
+    var result = string.Join(",", computer.Output);
+    Console.WriteLine($"[Part2:{filepath}] {result} {start} {sw.Elapsed.TotalMilliseconds}ms");
+}
 
 ChronospatialComputer ParseInput(string filepath)
 {
