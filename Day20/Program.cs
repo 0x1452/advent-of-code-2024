@@ -1,22 +1,27 @@
-﻿using Common;
+﻿using System.Diagnostics;
+using Common;
 using Common.AStar;
 
-SolvePart1("Input/example.txt", 64);
-SolvePart1("Input/example.txt", 40);
-SolvePart1("Input/example.txt", 38);
-SolvePart1("Input/example.txt", 36);
-SolvePart1("Input/example.txt", 20);
-SolvePart1("Input/example.txt", 12);
-SolvePart1("Input/example.txt", 10);
-SolvePart1("Input/example.txt", 8);
-SolvePart1("Input/example.txt", 6);
-SolvePart1("Input/example.txt", 4);
-SolvePart1("Input/example.txt", 2);
+int[] part1ExampleThresholds = [64, 40, 38, 36, 20, 12, 10, 8, 6, 4, 2];
+foreach (var threshold in part1ExampleThresholds)
+{
+    SolvePart1("Input/example.txt", threshold);
+}
 SolvePart1("Input/input.txt", 100);
+
+
+int[] part2ExampleThresholds = [76, 74, 72, 70, 68, 66, 64];
+foreach (var threshold in part2ExampleThresholds)
+{
+    SolvePart2("Input/example.txt", 20, threshold);
+}
+SolvePart2("Input/input.txt", 20, 100);
 
 void SolvePart1(string filepath, int shortcutThreshold)
 {
     var (grid, start, end) = ParseInput(filepath);
+
+    var sw = Stopwatch.StartNew();
 
     var aStar = new AStarOrthogonal(new SearchParameters
     {
@@ -30,7 +35,37 @@ void SolvePart1(string filepath, int shortcutThreshold)
     //PrintPath(grid, regularPath);
 
     var countShortcuts = CountShortcuts(grid, regularPath, shortcutThreshold);
-    Console.WriteLine($"[Part1:{filepath}:{shortcutThreshold}] {countShortcuts}");
+
+    sw.Stop();
+
+    Console.WriteLine($"[Part1:{filepath}:{shortcutThreshold}] {countShortcuts} {sw.Elapsed.TotalMilliseconds}ms");
+}
+
+void SolvePart2(string filepath, int radius, int shortcutThreshold)
+{
+    var (grid, start, end) = ParseInput(filepath);
+
+    var sw = Stopwatch.StartNew();
+
+    var aStar = new AStarOrthogonal(new SearchParameters
+    {
+        Grid = grid,
+        Start = start,
+        End = end
+    });
+
+    var regularPath = aStar.GetPath();
+    regularPath.Insert(0, start);
+
+    //PrintPath(grid, regularPath);
+
+    //Console.WriteLine(regularPath.Count);
+
+    var countShortcuts = CountShortcutsInRadius(grid, regularPath.ToHashSet(), radius, shortcutThreshold);
+
+    sw.Stop();
+
+    Console.WriteLine($"[Part2:{filepath}:{shortcutThreshold}] {countShortcuts} {sw.Elapsed.TotalMilliseconds}ms");
 }
 
 int CountShortcuts(bool[,] isWalkableGrid, List<Point> path, int shortcutThreshold)
@@ -80,6 +115,98 @@ int CountShortcuts(bool[,] isWalkableGrid, List<Point> path, int shortcutThresho
     }
 
     return shortcutCount;
+}
+
+int CountShortcutsInRadius(bool[,] isWalkableGrid, HashSet<Point> path, int radius, int shortcutThreshold)
+{
+    var shortcutCount = 0;
+
+    var distanceGrid = new int[isWalkableGrid.GetLength(0), isWalkableGrid.GetLength(1)];
+    var i = 0;
+    foreach (var point in path)
+    {
+        distanceGrid[point.Y, point.X] = i;
+        i++;
+    }
+
+    var offsets = PrecomputeOffsets(radius);
+
+    foreach (var point in path)
+    {
+        var startDistance = distanceGrid[point.Y, point.X];
+
+        var reachablePoints = GetReachablePoints(point.X, point.Y, offsets)
+            .Where(p => path.Contains(p.Point));
+
+        var pointsAboveThreshold = reachablePoints
+            .Where(p => distanceGrid[p.Point.Y, p.Point.X] - startDistance - p.StepsAway >= shortcutThreshold);
+
+        if (pointsAboveThreshold.Any())
+        {
+            //Console.WriteLine($"({point.X}, {point.Y}): " + string.Join(", ", pointsAboveThreshold.Select(p => $"({p.Point.X}, {p.Point.Y}) saves {distanceGrid[p.Point.Y, p.Point.X] - startDistance - p.StepsAway}")));
+            shortcutCount += pointsAboveThreshold.Count();
+
+            //DrawGrid(isWalkableGrid, distanceGrid, pointsAboveThreshold.Select(p => p.Point).Concat([point]), ConsoleColor.Red);
+        }
+    }
+
+    return shortcutCount;
+}
+
+static void DrawGrid(bool[,] grid, int[,] distanceGrid, IEnumerable<Point> highlightedPoints, ConsoleColor highlightColor)
+{
+    var highlightedSet = new HashSet<Point>(highlightedPoints);
+
+    var rows = grid.GetLength(0);
+    var cols = grid.GetLength(1);
+
+    for (int y = 0; y < rows; y++)
+    {
+        for (int x = 0; x < cols; x++)
+        {
+            if (highlightedSet.Contains(new Point(x, y)))
+            {
+                Console.ForegroundColor = highlightColor;
+                Console.Write(grid[y, x]
+                    ? $"{distanceGrid[y, x]:D2} "
+                    : "## ");
+            }
+            else
+            {
+                Console.ResetColor();
+                Console.Write(grid[y, x]
+                    ? $"{distanceGrid[y, x]:D2} "
+                    : "## ");
+            }
+        }
+        Console.WriteLine();
+    }
+
+    Console.ResetColor();
+    Console.WriteLine();
+}
+
+
+static List<(int dx, int dy)> PrecomputeOffsets(int steps)
+{
+    var offsets = new List<(int, int)>();
+    for (int dx = -steps; dx <= steps; dx++)
+    {
+        int maxDy = steps - Math.Abs(dx);
+        for (int dy = -maxDy; dy <= maxDy; dy++)
+        {
+            offsets.Add((dx, dy));
+        }
+    }
+    return offsets;
+}
+
+static IEnumerable<(Point Point, int StepsAway)> GetReachablePoints(int startX, int startY, List<(int, int)> offsets)
+{
+    foreach (var (dx, dy) in offsets)
+    {
+        yield return (new Point(startX + dx, startY + dy), Math.Abs(dx) + Math.Abs(dy));
+    }
 }
 
 void PrintPath(bool[,] grid, List<Point> path)
