@@ -31,19 +31,22 @@ void SolvePart2(string filepath)
 
 	var sw = Stopwatch.StartNew();
 
-    var cliques = GetCliques([], [.. graph.Keys], [], graph);
+	var cliques = new List<HashSet<string>>();
+    GetCliques([], [.. graph.Keys], [], graph, cliques);
 
 	var relevant = cliques
 		.OrderByDescending(c => c.Count)
-		.FirstOrDefault();
+		.FirstOrDefault()?
+		.Order();
 
-	var password = string.Join(",", relevant?.Order() ?? Enumerable.Empty<string>());
+	var password = relevant is not null
+		? string.Join(",", relevant)
+		: "No password found";
 
 	sw.Stop();
 
     Console.WriteLine($"[Part2:{filepath}] {password} {sw.Elapsed.TotalMilliseconds}ms");
 }
-
 
 // Bron Kerbosch with target size
 List<HashSet<string>> GetCliquesOfSize(
@@ -84,19 +87,30 @@ List<HashSet<string>> GetCliquesOfSize(
 	return cliques;
 }
 
-// Simple Bron Kerbosch 
-List<HashSet<string>> GetCliques(
+// Bron Kerbosch with pivot
+void GetCliques(
 	HashSet<string> currentClique, 
 	HashSet<string> candidates, 
 	HashSet<string> excluded,
-	Dictionary<string, HashSet<string>> graph)
+	Dictionary<string, HashSet<string>> graph,
+	List<HashSet<string>> foundCliques)
 {
 	if (candidates.Count == 0 && excluded.Count == 0)
-		return [currentClique];
+		foundCliques.Add(currentClique);
 
 	var cliques = new List<HashSet<string>>();
 
-	foreach (var candidate in candidates)
+    var pivots = new HashSet<string>(candidates);
+    pivots.UnionWith(excluded);
+	var pivot = pivots.FirstOrDefault();
+
+    // P \ N(u)
+    var pivotNeighbors = pivot is not null
+        ? graph[pivot]
+        : [];
+    var nonNeighbors = new HashSet<string>(candidates.Except(pivotNeighbors));
+
+    foreach (var candidate in nonNeighbors)
 	{
         // R ∪ {v}
         var newClique = new HashSet<string>(currentClique) { candidate };
@@ -109,13 +123,11 @@ List<HashSet<string>> GetCliques(
         var newExcluded = new HashSet<string>(excluded);
 		newExcluded.IntersectWith(graph[candidate]);
 
-        cliques.AddRange(GetCliques(newClique, newCandidates, newExcluded, graph));
+		GetCliques(newClique, newCandidates, newExcluded, graph, foundCliques);
 
 		candidates.Remove(candidate);
 		excluded.Add(candidate);
 	}
-
-	return cliques;
 }
 
 
