@@ -1,27 +1,52 @@
 ﻿// - Talked to ChatGPT to find out that this is called a "Clique Problem" in computer science
 // - Used this to learn about Bron-Kerbosch: https://docs.google.com/presentation/d/16of18n90_mxCo-yToxuBkF3_ZlZpD4TJ7OmMy7PkRnM/edit
 
+using System.Diagnostics;
+
 SolvePart1("Input/example.txt");
 SolvePart1("Input/input.txt");
+SolvePart2("Input/example.txt");
+SolvePart2("Input/input.txt");
 
 void SolvePart1(string filepath)
 {
     var graph = ParseInput(filepath);
+
+	var sw = Stopwatch.StartNew();
+
     var targetSize = 3;
-    var cliques = BronKerbosch([], [.. graph.Keys], [], graph, targetSize);
+    var cliques = GetCliquesOfSize([], [.. graph.Keys], [], graph, targetSize);
 
     var relevant = cliques
         .Where(c => c.Any(computer => computer[0] == 't'));
 
-    //foreach (var clique in relevant)
-    //{
-    //    Console.WriteLine(string.Join(" ", clique));
-    //}
+	sw.Stop();
 
-    Console.WriteLine($"[Part1:{filepath}] {relevant.Count()}");
+    Console.WriteLine($"[Part1:{filepath}] {relevant.Count()} {sw.Elapsed.TotalMilliseconds}ms");
 }
 
-List<HashSet<string>> BronKerbosch(
+void SolvePart2(string filepath)
+{
+    var graph = ParseInput(filepath);
+
+	var sw = Stopwatch.StartNew();
+
+    var cliques = GetCliques([], [.. graph.Keys], [], graph);
+
+	var relevant = cliques
+		.OrderByDescending(c => c.Count)
+		.FirstOrDefault();
+
+	var password = string.Join(",", relevant?.Order() ?? Enumerable.Empty<string>());
+
+	sw.Stop();
+
+    Console.WriteLine($"[Part2:{filepath}] {password} {sw.Elapsed.TotalMilliseconds}ms");
+}
+
+
+// Bron Kerbosch with target size
+List<HashSet<string>> GetCliquesOfSize(
 	HashSet<string> currentClique, 
 	HashSet<string> candidates, 
 	HashSet<string> excluded,
@@ -50,7 +75,7 @@ List<HashSet<string>> BronKerbosch(
 		newExcluded.IntersectWith(graph[candidate]);
 
 		if (newClique.Count + newCandidates.Count >= targetSize)
-            cliques.AddRange(BronKerbosch(newClique, newCandidates, newExcluded, graph, targetSize));
+            cliques.AddRange(GetCliquesOfSize(newClique, newCandidates, newExcluded, graph, targetSize));
 
 		candidates.Remove(candidate);
 		excluded.Add(candidate);
@@ -58,6 +83,41 @@ List<HashSet<string>> BronKerbosch(
 
 	return cliques;
 }
+
+// Simple Bron Kerbosch 
+List<HashSet<string>> GetCliques(
+	HashSet<string> currentClique, 
+	HashSet<string> candidates, 
+	HashSet<string> excluded,
+	Dictionary<string, HashSet<string>> graph)
+{
+	if (candidates.Count == 0 && excluded.Count == 0)
+		return [currentClique];
+
+	var cliques = new List<HashSet<string>>();
+
+	foreach (var candidate in candidates)
+	{
+        // R ∪ {v}
+        var newClique = new HashSet<string>(currentClique) { candidate };
+
+        // P ∩ N(v)
+        var newCandidates = new HashSet<string>(candidates);
+		newCandidates.IntersectWith(graph[candidate]);
+
+        // X = X ∪ {v}
+        var newExcluded = new HashSet<string>(excluded);
+		newExcluded.IntersectWith(graph[candidate]);
+
+        cliques.AddRange(GetCliques(newClique, newCandidates, newExcluded, graph));
+
+		candidates.Remove(candidate);
+		excluded.Add(candidate);
+	}
+
+	return cliques;
+}
+
 
 // "Adjacency List"
 Dictionary<string, HashSet<string>> ParseInput(string filepath)
