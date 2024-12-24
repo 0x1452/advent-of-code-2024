@@ -1,9 +1,17 @@
 ﻿using System.Text.RegularExpressions;
 
-SolvePart1("Input/example.txt");
-SolvePart1("Input/input.txt");
+Solve("Input/example.txt");
+Solve("Input/input.txt");
 
-void SolvePart1(string filepath)
+Solve("Input/input_fixed.txt");
+
+
+// I "manually" solved part 2:
+// - Exported a Graphviz graph
+// - First, I manually looked for x/y pairs that don't reach their `z` via two XOR jumps
+// - Then, I started comparing the binary representation of the current `Z` and the expected `Z` -> the first bit where it starts differing shows you the first invalid "adder"
+// -> I manually fixed the connections in the input, and checked where the Z differs again until I had the solution
+void Solve(string filepath)
 {
     var (inputs, connections) = ParseInput(filepath);
 
@@ -41,7 +49,52 @@ void SolvePart1(string filepath)
         .Select((bit, index) => bit.Value ? 1L << index : 0)
         .Sum();
 
+    SaveGraphviz(filepath, inputs);
+
+    var resultX = inputs
+        .Where(i => i.Key.StartsWith('x'))
+        .OrderBy(i => i.Key)
+        .Select((bit, index) => bit.Value ? 1L << index : 0)
+        .Sum();
+
+    var resultY = inputs
+        .Where(i => i.Key.StartsWith('y'))
+        .OrderBy(i => i.Key)
+        .Select((bit, index) => bit.Value ? 1L << index : 0)
+        .Sum();
+
+    var resultZ = resultX + resultY;
+
+    Console.WriteLine($"X:            {Convert.ToString(resultX, 2).PadLeft(46, '0')}");
+    Console.WriteLine($"Y:            {Convert.ToString(resultY, 2).PadLeft(46, '0')}");
+    Console.WriteLine($"Z (expected): {Convert.ToString(resultZ, 2).PadLeft(46, '0')}");
+    Console.WriteLine($"Z (actual):   {Convert.ToString(result, 2).PadLeft(46, '0')}");
+
     Console.WriteLine($"[Part1:{filepath}] {result}");
+}
+
+void SaveGraphviz(string filepath, Dictionary<string, bool> inputs)
+{
+    var (_, connections) = ParseInput(filepath);
+
+    var filename = Path.GetFileName(filepath) + ".graph.dot";
+    using var writer = new StreamWriter(filename);
+
+    writer.WriteLine("digraph Circuit {");
+    writer.WriteLine("  rankdir=LR;");
+
+    foreach (var input in inputs.Keys)
+    {
+        writer.WriteLine($"  \"{input}\" [shape=circle];");
+    }
+
+    foreach (var connection in connections)
+    {
+        writer.WriteLine($"  \"{connection.In1}\" -> \"{connection.Out}\" [label=\"{connection.Operation}\"];");
+        writer.WriteLine($"  \"{connection.In2}\" -> \"{connection.Out}\" [label=\"{connection.Operation}\"];");
+    }
+
+    writer.WriteLine("}");
 }
 
 Input ParseInput(string filepath)
