@@ -31,17 +31,14 @@ void SolvePart2(string filepath)
 
     var sw = Stopwatch.StartNew();
 
-    var cliques = new List<HashSet<string>>();
-    GetCliques([], [.. graph.Keys], [], graph, cliques);
+    var cliques = GetCliques([], [.. graph.Keys], [], graph);
 
     var relevant = cliques
         .OrderByDescending(c => c.Count)
-        .FirstOrDefault()?
+        .First()
         .Order();
 
-    var password = relevant is not null
-        ? string.Join(",", relevant)
-        : "No password found";
+    var password = string.Join(",", relevant);
 
     sw.Stop();
 
@@ -88,15 +85,14 @@ List<HashSet<string>> GetCliquesOfSize(
 }
 
 // Bron Kerbosch with pivot
-void GetCliques(
+List<HashSet<string>> GetCliques(
     HashSet<string> currentClique,
     HashSet<string> candidates,
     HashSet<string> excluded,
-    Dictionary<string, HashSet<string>> graph,
-    List<HashSet<string>> foundCliques)
+    Dictionary<string, HashSet<string>> graph)
 {
     if (candidates.Count == 0 && excluded.Count == 0)
-        foundCliques.Add(currentClique);
+        return [currentClique];
 
     var cliques = new List<HashSet<string>>();
 
@@ -123,13 +119,14 @@ void GetCliques(
         var newExcluded = new HashSet<string>(excluded);
         newExcluded.IntersectWith(graph[candidate]);
 
-        GetCliques(newClique, newCandidates, newExcluded, graph, foundCliques);
+        cliques.AddRange(GetCliques(newClique, newCandidates, newExcluded, graph));
 
         candidates.Remove(candidate);
         excluded.Add(candidate);
     }
-}
 
+    return cliques;
+}
 
 // "Adjacency List"
 Dictionary<string, HashSet<string>> ParseInput(string filepath)
